@@ -1,0 +1,1 @@
+A comparison of a spatial EMOD simulation of the Gwembe region of Southern Zambia, compared to surveillance accompanying mass-screen-and-treat activities in 2012 and 2013.
