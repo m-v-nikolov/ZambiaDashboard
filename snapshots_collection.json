@@ -1,0 +1,21 @@
+[
+	{
+		"file": "snapshot_backup.json",	
+		"snapshot": "Habitats per HFCA"
+	},
+
+	{
+		"file": "snapshot_scaled.json",	
+		"snapshot": "BAU recalibrated, weighted, scaled (0.8)"
+	},
+
+	{
+		"file": "snapshot_flipped_scaled.json",	
+		"snapshot": "BAU recalibrated, weighted, scaled, flipped sigmoid params (0.8)"
+	},
+
+	{
+		"file": "snapshot_constant_map_lower_adjusted_step.json",	
+		"snapshot": "Constant scale step function of altitude"
+	}
+]

@@ -22,8 +22,9 @@ var customTimeFormat = d3.time.format.multi([
 
 function load_data() {
     load_chart("New_Diagnostic_Prevalence.tsv", "RDT Positive Rate", yaxis={nticks:5, style:'%'});
-    load_map("snapshot.json", "Simulation")
-    load_map("surveillance.json", "Surveillance")
+    load_map("snapshot.json", "Simulation", "simulation")
+    load_map("surveillance.json", "Surveillance", "surveillance")
+    load_snapshots_list()
     load_histogram()
     //load_map_hh("hhs.json", "Clusters/HHs")
     
@@ -44,7 +45,7 @@ function update_RDT_array_idx(idx) {
 
 function load_histogram()
 {
-	var margin = {top: 20, right: 20, bottom: 80, left: 40},
+	var margin = {top: 50, right: 20, bottom: 50, left: 40},
 	    width = 250 - margin.left - margin.right,
 	    height = 200 - margin.top - margin.bottom;
 	
@@ -81,13 +82,9 @@ function load_histogram()
     .attr("dy", ".35em")
     .attr("transform", "rotate(90)")
     .attr("id", "alt_y")
-    .style("text-anchor", "start");
+    .style("text-anchor", "start")
+    .text("Altitude");
 	  
-	  /*svg.append("g")
-	      .attr("class", "x axis")
-	      .attr("transform", "translate(0," + height + ")")
-	      .call(xAxis);
-	      */
 	
 	svg.append("g")
 	      .attr("class", "y axis")
@@ -117,14 +114,9 @@ function load_histogram()
 	.attr("dy", ".35em")
 	.attr("transform", "rotate(90)")
 	.attr("id", "veg_x")
-	.style("text-anchor", "start");
+	.style("text-anchor", "start")
+	.text("EVI");
 	  
-	  /*svg.append("g")
-	      .attr("class", "x axis")
-	      .attr("transform", "translate(0," + height + ")")
-	      .call(xAxis);
-	      */
-	
 	svg1.append("g")
 	      .attr("class", "y axis")
 	      .call(yAxis)
@@ -139,7 +131,7 @@ function load_histogram()
 
 function draw_histogram(cluster_id)
 {
-	var margin = {top: 20, right: 20, bottom: 80, left: 40},
+	var margin = {top: 50, right: 20, bottom: 50, left: 40},
     width = 250 - margin.left - margin.right,
     height = 200 - margin.top - margin.bottom;
 	
@@ -159,8 +151,10 @@ function draw_histogram(cluster_id)
 	    .ticks(10, "%");
 		
 	var svg = d3.select(".resourcecontainer.maps").selectAll("#alt")
-	//d3.select(".resourcecontainer.maps").selectAll(".bar").remove()
+
 	d3.select(".resourcecontainer.maps").selectAll("#alt").selectAll(".bar").remove()
+	
+	//d3.select(".resourcecontainer.maps").selectAll("#alt").selectAll().remove()
 		
 	d3.tsv("hists/altitude_"+cluster_id+".tsv", type, function(error, data) {
 		  x.domain(data.map(function(d) { return d.altitude; }));
@@ -221,8 +215,7 @@ function draw_histogram(cluster_id)
 		      .attr("y", function(d) { return y1(d.frequency); })
 		      .attr("height", function(d) { return height - y1(d.frequency); })
 			  .attr("background-color","green");
-		
-		   
+
 		   svg1.append("g")
 		    .attr("class", "x axis")
 		    .attr("transform", "translate(0," + height + ")")
@@ -239,6 +232,29 @@ function draw_histogram(cluster_id)
 		  d.frequency = +d.frequency;
 		  return d;
 		}
+}
+
+function load_snapshots_list()
+{
+	var snapshot_selection =  d3.select(".resourcecontainer.maps").append("select")
+		.attr("size", 10);
+	
+	d3.json("snapshots_collection.json", function(error, snapshots) {
+		snapshot_selection.selectAll("option")
+			.data(snapshots)
+			.enter().append("option")
+			 .attr("value", function (d) {
+				 	return d.file; 
+			 		})
+			 .text(function (d) {
+				 	return d.snapshot; 
+			 	 })
+			 
+			 .on("click", function () {
+                var snapshot_file = this.__data__.file;
+                load_map(snapshot_file, "Simulation", "simulation");
+            })
+		});
 }
 
 function load_map_hh(json_input, map_title)
@@ -370,30 +386,6 @@ function load_map_hh_hfcas(json_input, map_title)
             .attr("d", path);
     });
 
-    /*d3.json(json_input, function (collection) {
-
-        var focus = svg_maps.append("g")
-            .attr("transform", "translate(-100,-100)")
-            .attr("class", "focus");
-
-        focus.append("text")
-            .attr("y", -10);
-
-        svg_maps.append("g")
-            .attr("class", "bubble")
-          .selectAll("circle")
-            .data(collection)
-          .enter().append("circle")
-            .attr("transform", function (d) {
-                return "translate(" + xy([d.Longitude, d.Latitude]) + ")";
-            })
-            .attr("opacity", 0.7)
-            .attr("fill", function (d) {
-                var c = 'darkgray'
-                return c;
-            })
-            .attr("r", function (d) { return 1; });   // TODO: bubble legend?
-    }); */
 
     svg_maps.append("g")
       .append("text")
@@ -415,18 +407,9 @@ function load_map_hh_hfcas(json_input, map_title)
         	.style("fill", "white")
         	.attr("stroke", "#222")
     });
-    
-    /*d3.json("hfcas.json", function (error, hfcas) {
-        svg_maps.selectAll(".hfcas")
-            .data(hfcas.features)
-          .enter().append("path")
-            .attr("class", "hfcas");
-            //.attr("d", path);
-    }); */
-
 }
 
-function load_map(json_input, map_title) {
+function load_map(json_input, map_title, map_type) {
 
     var margin = margin_maps;
     var width  = 480 - margin.left - margin.right,
@@ -439,13 +422,26 @@ function load_map(json_input, map_title) {
         .scale(22000)
         .translate([width / 2, height / 2]);
     path = d3.geo.path().projection(xy);
-
-    var svg_maps = d3.select(".resourcecontainer.maps").append("svg")
+    
+    
+    var svg_maps = d3.select(".resourcecontainer.maps").select("#"+map_type)
+    
+    if(svg_maps == "")
+    {
+    	svg_maps = d3.select(".resourcecontainer.maps").append("svg")
+    }
+    else
+    	 d3.select(".resourcecontainer.maps").select("#"+map_type).selectAll().remove
+    	 
+    //var svg_maps = d3.select(".resourcecontainer.maps").append("svg")
+  
+    svg_maps
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
+        .attr("id", map_type)
       .append("g")
         //.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
+  
     // TODO: lat/lon axes (clip to margins)
     // TODO: topology raster 
     // TODO: switch to underlying map like Google/Bing/OpenLayers to avoid site-specific topojson?
@@ -473,10 +469,9 @@ function load_map(json_input, map_title) {
     });
     
     d3.json(json_input, function (collection) {
-
+        
         // Let's give the little bubbles a chance to be moused over when they overlap big ones
         collection.sort(function (a, b) { return b.Population - a.Population; });
-
         var focus = svg_maps.append("g")
             .attr("transform", "translate(-100,-100)")
             .attr("class", "focus");
@@ -524,15 +519,12 @@ function load_map(json_input, map_title) {
             });
     });
         
-
-
     svg_maps.append("g")
       .append("text")
         .attr("class", "chart_title")
         .attr("transform", "translate(" + (width-margin.left) + "," + height + ")")
         .style("font-weight", "bold")
         .text(map_title);
-
 }
 
 // TODO: would this be better to do top-down, i.e. selectAll(svg.resourcecontainer.maps) and work down for each?
@@ -547,6 +539,7 @@ function display_bubble_text(d) {
     focus.attr("transform", "translate(" + margin_maps.left + "," + margin_maps.top + ")");
 }
 
+
 function hide_bubble_text(d) {
     var svg_maps = this.parentNode.parentNode;
     var focus = d3.select(svg_maps).select('.focus');
@@ -554,10 +547,10 @@ function hide_bubble_text(d) {
     focus.attr("transform", "translate(-100,-100)");
 }
 
+
 function bring_to_front(d) {
     this.parentNode.appendChild(this);
 }
-
 
 
 function load_chart(tsv_input, chart_title, yaxis, yfunc) {
@@ -680,6 +673,7 @@ function load_chart(tsv_input, chart_title, yaxis, yfunc) {
         }
     });
 }
+
 
 function type(d, i) {
     if (!i) months = Object.keys(d).map(monthFormat.parse).filter(Number);
